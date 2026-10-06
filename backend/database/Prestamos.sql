@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS equipos (
     nombre VARCHAR(255) NOT NULL,
     serial VARCHAR(255) NOT NULL UNIQUE,
     estado VARCHAR(50) NOT NULL,
-    categoria_id INT,
+    categoria_id INT NOT NULL,
     FOREIGN KEY (categoria_id) REFERENCES categorias(id)
 );
 
