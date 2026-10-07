@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PrestamosAPI.data;
 using PrestamosAPI.Models;
+using PrestamosAPI.Services;
 
 namespace PrestamosAPI.Controllers
 {
@@ -13,91 +14,60 @@ namespace PrestamosAPI.Controllers
     public class PrestamosController : ControllerBase
     {
         private readonly PrestamosContext _context;
+        private readonly PrestamoService _service;
 
-        public PrestamosController(PrestamosContext context)
+        public PrestamosController(PrestamosContext context, PrestamoService service)
         {
             _context = context;
+            _service = service;
         }
 
 //POST crear un nuevo prestamo en la base de datos
         [HttpPost]
         public async Task<ActionResult<Prestamo>> CrearPrestamo(PrestamoRequest request)
         {
-            var empleado = await _context.Empleados.FindAsync(request.EmpleadoId);
-            if (empleado is null)
+            var resultado = await _service.CrearPrestamo(request);
+            if (resultado.Prestamo is not null)
             {
-                return NotFound("El empleado no existe, favor de verificar el ID proporcionado e intente nuevamente.");
-            } 
-            var equipo = await _context.Equipos.FindAsync(request.EquipoId);
-            if (equipo is null)
-            {
-                return NotFound("El equipo no existe, favor de verificar el ID proporcionado e intente nuevamente.");
+                return Ok(resultado.Prestamo);
             }
-            if (equipo.Estado != "Disponible")
+            if (resultado.Error!.Contains("empleado no existe."))
             {
-                return BadRequest($"El equipo con ID {equipo.Id} no se encuentra disponible para préstamo. Estado actual: {equipo.Estado}");
+                return NotFound(resultado.Error);
             }
-            var prestamo = new Prestamo
+            if (resultado.Error!.Contains("equipo no existe."))
             {
-                EmpleadoId = request.EmpleadoId,
-                EquipoId = request.EquipoId,
-                FechaPrestamo = DateTime.Now,
-                Estado = "Activo"
-            };
-
-            equipo.Estado = "Prestado";
-            _context.Prestamos.Add(prestamo);
-            await _context.SaveChangesAsync();
-            return Ok(prestamo);
+                return NotFound(resultado.Error);
+            }
+            return BadRequest(resultado.Error);
         }
 
 //PUT devolver un equipo prestado y actualizar el estado del prestamo y del equipo
         [HttpPut("{id}/devolver")]
         public async Task<ActionResult<Prestamo>> DevolverPrestamo(int id)
         {
-            var prestamo = await _context.Prestamos.FindAsync(id);
-            if (prestamo is null)
+            var resultado = await _service.DevolverPrestamo(id);
+            if (resultado.Prestamo is not null)
             {
-                return NotFound("El préstamo no se encuentra registrado, favor de verificar el ID proporcionado e intente nuevamente.");
+                return Ok(resultado.Prestamo);
             }
-            if (prestamo.Estado == "Devuelto")
+            if (resultado.Error!.Contains("préstamo no existe"))
             {
-                return BadRequest("El equipo ya ha sido devuelto.");
+                return NotFound(resultado.Error);
             }
-            var equipo = await _context.Equipos.FindAsync(prestamo.EquipoId);
-            if (equipo is null)
+            if (resultado.Error!.Contains("equipo asociado"))
             {
-                return NotFound("El equipo asociado al préstamo no se encuentra registrado, favor de verificar el ID proporcionado e intente nuevamente.");
+                return NotFound(resultado.Prestamo);
             }
-
-            prestamo.FechaDevolucion = DateTime.Now;
-            prestamo.Estado = "Devuelto";
-            equipo.Estado = "Disponible";
-            await _context.SaveChangesAsync();
-            return Ok(prestamo);
+            return BadRequest(resultado.Error);
         }
 
 //GET mostrar todos los prestamos
         [HttpGet("activos")]
-        public async Task<ActionResult<IEnumerable<Prestamo>>> GetPrestamos()
+        public async Task<ActionResult<IEnumerable<Prestamo>>> GetPrestamosActivos()
         {
-            var prestamosActivos = await (
-                from prestamo in _context.Prestamos
-                join equipo in _context.Equipos
-                    on prestamo.EquipoId equals equipo.Id
-                join empleado in _context.Empleados
-                    on prestamo.EmpleadoId equals empleado.Id
-                where prestamo.Estado == "Activo"
-                select new
-                {
-                    prestamo.Id,
-                    Equipo = equipo.Nombre,
-                    Empleado = empleado.Nombre,
-                    prestamo.FechaPrestamo,
-                    prestamo.Estado
-                }).ToListAsync();
-
-                return Ok(prestamosActivos);
+            var resultado = await _service.GetPrestamosActivos();
+            return Ok(resultado);
         }
     }
 }
