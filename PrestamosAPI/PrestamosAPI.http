@@ -1,6 +1,17 @@
 @PrestamosAPI_HostAddress = http://localhost:5181
 
-GET {{PrestamosAPI_HostAddress}}/weatherforecast/
+### Listar equipos
+GET {{PrestamosAPI_HostAddress}}/api/equipos
 Accept: application/json
 
-###
+### Obtener equipo por ID
+GET {{PrestamosAPI_HostAddress}}/api/equipos/1
+Accept: application/json
+
+### Listar empleados
+GET {{PrestamosAPI_HostAddress}}/api/empleados
+Accept: application/json
+
+### Listar préstamos activos
+GET {{PrestamosAPI_HostAddress}}/api/prestamos/activos
+Accept: application/json
