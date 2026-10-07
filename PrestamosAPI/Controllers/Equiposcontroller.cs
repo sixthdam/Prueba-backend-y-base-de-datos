@@ -103,5 +103,19 @@ namespace PrestamosAPI.Controllers
             await _context.SaveChangesAsync();
             return Ok(equipo);
         }
+
+//DELETE eliminar un equipo existente        
+        [HttpDelete("{id}")]
+        public async Task<ActionResult> EliminarEquipo(int id)
+        {
+            var equipo = await _context.Equipos.FindAsync(id);
+            if (equipo is null)
+            {
+                return NotFound();
+            }
+            _context.Equipos.Remove(equipo);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
     }
 }
