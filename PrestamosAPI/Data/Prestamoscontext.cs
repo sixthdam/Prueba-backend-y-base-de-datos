@@ -10,6 +10,7 @@ namespace PrestamosAPI.data
         }
         public DbSet<Equipo> Equipos { get; set; }
         public DbSet<Empleado> Empleados { get; set; }
+        public DbSet<Prestamo> Prestamos { get; set; }
     }
     
 }
